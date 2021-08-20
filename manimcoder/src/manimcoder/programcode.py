@@ -20,11 +20,6 @@ from typing import (
 from manim.mobject.types.opengl_vectorized_mobject import OpenGLVMobject
 from manim.mobject.types.opengl_surface import OpenGLSurface
 
-CANVAS_SIZE = [8 * 16 / 9, 8]
-
-RIGHT_PANEL_WIDTH = 5
-RIGHT_PANEL_RATIO = 0.5
-
 
 class ChangePhases(Enum):
     PRE_SWAP = 0
@@ -187,16 +182,18 @@ class ProgramCodeLines:
 
 
 class ProgramCode:
-    def __init__(self, code):
+    def __init__(self, code, anchor):
         super().__init__()
         self.code = ProgramCodeLines(code)
         self.positioning = []
+        self.anchor = anchor
 
     def _gen_coloured_text_symbols(self):
         code = self.code.get_new_code()
         all_text = Text(code, font="FreeMono")
         for instruction, args, kwargs in self.positioning:
             getattr(all_text, instruction)(*args, **kwargs)
+        all_text.add_updater(lambda d: d.align_to(self.anchor, LEFT).align_to(self.anchor, UP))
         # print(HtmlFormatter().get_style_defs('.zenburn'))
         html = highlight(code, get_lexer_by_name("python"), HtmlFormatter(style='zenburn'))
         soup = bs4.BeautifulSoup(html, features="html.parser")
@@ -320,4 +317,8 @@ class ProgramCode:
 
     def shift(self, *args, **kwargs):
         self.positioning.append(('shift', args, kwargs))
+        return self
+
+    def add_updater(self, *args, **kwargs):
+        self.positioning.append(('add_updater', args, kwargs))
         return self

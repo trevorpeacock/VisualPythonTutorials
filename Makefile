@@ -17,4 +17,4 @@ clean:
 
 .PHONY: run
 run: setup
-	bash -c "source $(VENVPATH)/bin/activate && manim -a -qm -p videos/1.py"
+	bash -c "source $(VENVPATH)/bin/activate && manim -a -qm -p videos/flow.py"
