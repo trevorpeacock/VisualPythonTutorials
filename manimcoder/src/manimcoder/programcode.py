@@ -34,7 +34,7 @@ class LinePartCreationActions(Enum):
     INSERT = 1
 
 
-ChangeDefinition = namedtuple('ChangeDefinition', ['phase', 'change'])
+ChangeDefinition = namedtuple('ChangeDefinition', ['phase', 'change', 'new_elements'])
 
 
 class ProgramCodeLinePart:
@@ -53,22 +53,22 @@ class ProgramCodeLinePart:
         changes = []
         if self.new == '':
             self.symbols.submobjects = list(reversed(self.symbols.submobjects))
-            changes.append(ChangeDefinition(ChangePhases.LINES, Uncreate(self.symbols)))
+            changes.append(ChangeDefinition(ChangePhases.LINES, Uncreate(self.symbols), None))
         elif self.current == '':
             if line_is_new:
-                changes.append(ChangeDefinition(ChangePhases.NEW_LINE_WRITE, Create(symbols)))
+                changes.append(ChangeDefinition(ChangePhases.NEW_LINE_WRITE, Create(symbols), symbols))
             else:
-                changes.append(ChangeDefinition(ChangePhases.LINES, Create(symbols)))
+                changes.append(ChangeDefinition(ChangePhases.LINES, Create(symbols), symbols))
         elif self.current == self.new:
             if replacement:
                 changes.append(
-                    ChangeDefinition(ChangePhases.LINES, ReplacementTransform(self.symbols, symbols)))
+                    ChangeDefinition(ChangePhases.LINES, ReplacementTransform(self.symbols, symbols), symbols))
             else:
                 changes.append(
-                    ChangeDefinition(ChangePhases.NEW_LINE_SHUFFLE, ReplacementTransform(self.symbols, symbols)))
+                    ChangeDefinition(ChangePhases.NEW_LINE_SHUFFLE, ReplacementTransform(self.symbols, symbols), symbols))
         else:
             changes.append(
-                ChangeDefinition(ChangePhases.LINES, ReplacementTransform(self.symbols, symbols)))
+                ChangeDefinition(ChangePhases.LINES, ReplacementTransform(self.symbols, symbols), symbols))
         self.current = self.new
         self.symbols = symbols
         #print(f'"{self.current}" -> "{self.new}"', changes)
@@ -181,21 +181,23 @@ class ProgramCodeLines:
         self.lines = new_lines
 
 
-class ProgramCode:
-    def __init__(self, code, anchor):
+class ProgramCode(VMobject):
+    def __init__(self, code, lexer='text', highlight_style='zenburn'):
         super().__init__()
         self.code = ProgramCodeLines(code)
-        self.positioning = []
-        self.anchor = anchor
+        self.lexer = get_lexer_by_name('text') if lexer is None else lexer
+        if isinstance(self.lexer, str):
+            self.lexer = get_lexer_by_name(self.lexer)
+        self.highlight_style = highlight_style
+        self.reference_dot = Dot(radius=0)
+        self.add(self.reference_dot)
 
     def _gen_coloured_text_symbols(self):
         code = self.code.get_new_code()
-        all_text = Text(code, font="FreeMono")
-        for instruction, args, kwargs in self.positioning:
-            getattr(all_text, instruction)(*args, **kwargs)
-        all_text.add_updater(lambda d: d.align_to(self.anchor, LEFT).align_to(self.anchor, UP))
+        all_text = Text(code, font="FreeMono").scale(0.8)
+        all_text.align_to(self.reference_dot, UP + LEFT)
         # print(HtmlFormatter().get_style_defs('.zenburn'))
-        html = highlight(code, get_lexer_by_name("python"), HtmlFormatter(style='zenburn'))
+        html = highlight(code, self.lexer, HtmlFormatter(style=self.highlight_style))
         soup = bs4.BeautifulSoup(html, features="html.parser")
         pos = 0
         for e in soup.select('div > pre')[0]:
@@ -302,7 +304,9 @@ class ProgramCode:
 
     def changes(self):
         phases = defaultdict(list)
-        for phase, change in self.code.changes(self._gen_coloured_text_symbols()):
+        for phase, change, symbols in self.code.changes(self._gen_coloured_text_symbols()):
+            symbols.relative_position = self.reference_dot.get_center() - symbols.get_center()
+            symbols.add_updater(lambda d: d.move_to(self.reference_dot.get_center() - d.relative_position))
             phases[phase].append(change)
         for phase in phases:
             phases[phase] = AnimationGroup(*phases[phase])
@@ -310,15 +314,3 @@ class ProgramCode:
         for phase in sorted(phases.keys(), key=lambda p: p.value):
             changes.append(phases[phase])
         return AnimationGroup(*changes, lag_ratio=1)
-
-    def align_to(self, *args, **kwargs):
-        self.positioning.append(('align_to', args, kwargs))
-        return self
-
-    def shift(self, *args, **kwargs):
-        self.positioning.append(('shift', args, kwargs))
-        return self
-
-    def add_updater(self, *args, **kwargs):
-        self.positioning.append(('add_updater', args, kwargs))
-        return self

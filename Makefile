@@ -18,3 +18,7 @@ clean:
 .PHONY: run
 run: setup
 	bash -c "source $(VENVPATH)/bin/activate && manim -a -qm -p videos/flow.py"
+
+.PHONY: test
+test: setup
+	bash -c "source $(VENVPATH)/bin/activate && manim -qm -p testing/tst2.py MovingFrameBox2"

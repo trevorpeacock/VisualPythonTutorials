@@ -8,12 +8,46 @@ RIGHT_PANEL_RATIO = 0.5
 
 class MovingFrameBox2(Scene):
     def construct(self):
+        rectangle = Dot(radius=0)
+
+        # create text, characters spaced approprately
         text = Text("Microscope", font="Monospace")
+        text.align_to(rectangle, LEFT + UP)
+
+        #select characters
         part1 = text[0:3]
         part2 = text[3:5]
         part2.submobjects = list(reversed(part2.submobjects))
         part3 = text[5:10]
+
+        #text.add_updater(lambda d: d.move_to(rectangle.get_center())) # has no effect
+
+        #part1.add_updater(lambda d: d.move_to(rectangle.get_center())) #changes relative position of each text part
+        #part2.add_updater(lambda d: d.move_to(rectangle.get_center()))
+        #part3.add_updater(lambda d: d.move_to(rectangle.get_center()))
+
+        #part1_rp = (rectangle.get_center() + LEFT * rectangle.width/2 + UP * rectangle.height/2) - part1.get_center()
+        #part1.add_updater(lambda d: d.move_to((rectangle.get_center() + LEFT * rectangle.width/2 + UP * rectangle.height/2) - part1_rp))
+        #part2_rp = (rectangle.get_center() + LEFT * rectangle.width/2 + UP * rectangle.height/2) - part2.get_center()
+        #part2.add_updater(lambda d: d.move_to((rectangle.get_center() + LEFT * rectangle.width/2 + UP * rectangle.height/2) - part2_rp))
+        #part3_rp = (rectangle.get_center() + LEFT * rectangle.width/2 + UP * rectangle.height/2) - part3.get_center()
+        #part3.add_updater(lambda d: d.move_to((rectangle.get_center() + LEFT * rectangle.width/2 + UP * rectangle.height/2) - part3_rp))
+
+        part1_rp = rectangle.get_center() - part1.get_center()
+        part1.add_updater(lambda d: d.move_to(rectangle.get_center() - part1_rp))
+        part2_rp = rectangle.get_center() - part2.get_center()
+        part2.add_updater(lambda d: d.move_to(rectangle.get_center() - part2_rp))
+        part3_rp = rectangle.get_center() - part3.get_center()
+        part3.add_updater(lambda d: d.move_to(rectangle.get_center() - part3_rp))
+
+        #self.play(Create(text)) #This won't do what we want, we want to animate different characters seperately
+
+        self.play(Create(rectangle))
         self.play(AnimationGroup(Create(part1), Create(part2), Create(part3), lag_ratio=2))
+        self.play(ApplyMethod(rectangle.shift, DOWN*3))
+        self.play(ApplyMethod(rectangle.shift, UP*3))
+        self.play(ApplyMethod(rectangle.set_width, 10))
+        self.play(ApplyMethod(rectangle.set_width, 5))
 
         self.wait(3)
         self.play(AnimationGroup(Uncreate(part1), Uncreate(part2), Uncreate(part3), lag_ratio=2))
