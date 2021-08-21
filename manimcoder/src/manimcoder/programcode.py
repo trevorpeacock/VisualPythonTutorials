@@ -40,7 +40,7 @@ ChangeDefinition = namedtuple('ChangeDefinition', ['phase', 'change', 'new_eleme
 class ProgramCodeLinePart:
     def __init__(self, new, creation_action):
         self.current = ''
-        self.symbols = None
+        self.symbols = VGroup()
         self.new = new
         self.action = creation_action
 
@@ -52,8 +52,9 @@ class ProgramCodeLinePart:
     def changes(self, symbols, line_is_new, replacement):
         changes = []
         if self.new == '':
-            self.symbols.submobjects = list(reversed(self.symbols.submobjects))
-            changes.append(ChangeDefinition(ChangePhases.LINES, Uncreate(self.symbols), None))
+            if self.current != '':
+                self.symbols.submobjects = list(reversed(self.symbols.submobjects))
+                changes.append(ChangeDefinition(ChangePhases.LINES, Uncreate(self.symbols), None))
         elif self.current == '':
             if line_is_new:
                 changes.append(ChangeDefinition(ChangePhases.NEW_LINE_WRITE, Create(symbols), symbols))
@@ -197,7 +198,8 @@ class ProgramCode(VMobject):
     def _gen_coloured_text_symbols(self):
         code = self.code.get_new_code()
         all_text = Text(code, font="FreeMono").scale(0.8)
-        all_text.align_to(self.reference_dot, UP + LEFT)
+        if len(all_text):
+            all_text.align_to(self.reference_dot, UP + LEFT)
         # print(HtmlFormatter().get_style_defs('.zenburn'))
         html = highlight(code, self.lexer, HtmlFormatter(style=self.highlight_style))
         soup = bs4.BeautifulSoup(html, features="html.parser")
