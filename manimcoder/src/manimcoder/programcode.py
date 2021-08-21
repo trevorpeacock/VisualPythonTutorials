@@ -143,14 +143,35 @@ class ProgramCodeLine:
         part = ProgramCodeLinePart(self.get_new_code(), None) # replace part(s)
         part.current = part.new
         part.symbols = symbols
+        self.symbols = symbols
         self.parts = [part]
         self.new = False
         self.replacement = False
 
+    def symbols_range(self, start, stop):
+        symbols = []
+        code = self.get_new_code()
+        if stop < 0:
+            stop = len(code) + stop + 1
+        pos = 0
+        for i, c in enumerate(code):
+            if start <= i < stop:
+                symbols.append(self.symbols[pos])
+            pos += len(c.strip(' ').strip('\t'))
+        return VGroup(*symbols)
+
+    def symbols_by_search(self, text):
+        index = self.get_new_code().index(text)
+        if index == -1:
+            raise IndexError()
+        return self.symbols_range(index, index + len(text))
 
 class ProgramCodeLines:
     def __init__(self, code):
         self.lines = []
+        self.add_code(code)
+
+    def add_code(self, code):
         for line in code.split('\n'):
             self.lines.append(ProgramCodeLine(line))
 
@@ -159,6 +180,9 @@ class ProgramCodeLines:
 
     def insert_line(self, index, line):
         self.lines.insert(index, line)
+
+    def append_line(self, line):
+        self.lines.append(line)
 
     def replace(self, line, old_text, new_text):
         self.lines[line].replace(old_text, new_text)
@@ -175,13 +199,17 @@ class ProgramCodeLines:
         for line in self.lines:
             if line.delete:
                 for part in line.parts:
-                    yield ChangeDefinition(ChangePhases.NEW_LINE_SHUFFLE, FadeOut(part.symbols))
+                    yield ChangeDefinition(ChangePhases.NEW_LINE_SHUFFLE, FadeOut(part.symbols), None)
                 continue
             text = line.get_new_code(True)
             yield from line.changes(symbols[pos:pos+len(text)])
             pos += len(text)
             new_lines.append(line)
         self.lines = new_lines
+
+    def symbols(self):
+        for line in self.lines:
+            yield line.symbols
 
 
 class ProgramCode(VMobject):
@@ -194,10 +222,12 @@ class ProgramCode(VMobject):
         self.highlight_style = highlight_style
         self.reference_dot = Dot(radius=0)
         self.add(self.reference_dot)
+        self.all_text = None
 
     def _gen_coloured_text_symbols(self):
         code = self.code.get_new_code()
         all_text = Text(code, font="FreeMono").scale(0.8)
+        self.all_text = all_text
         if len(all_text):
             all_text.align_to(self.reference_dot, UP + LEFT)
         # print(HtmlFormatter().get_style_defs('.zenburn'))
@@ -297,6 +327,9 @@ class ProgramCode(VMobject):
     def insert_line(self, before_line, text):
         self.code.insert_line(before_line, ProgramCodeLine(text))
 
+    def append_line(self, line):
+        self.code.lines.append(ProgramCodeLine(line))
+
     def replace(self, line, old_text, new_text):
         self.code.replace(line, old_text, new_text)
 
@@ -306,11 +339,17 @@ class ProgramCode(VMobject):
     def remove_line(self, line):
         self.code.remove_line(line)
 
+    def replace_code(self, new_code):
+        for lineno, _ in enumerate(self.code.lines):
+            self.remove_line(lineno)
+        self.code.add_code(new_code)
+
     def changes(self):
         phases = defaultdict(list)
         for phase, change, symbols in self.code.changes(self._gen_coloured_text_symbols()):
-            symbols.relative_position = self.reference_dot.get_center() - symbols.get_center()
-            symbols.add_updater(lambda d: d.move_to(self.reference_dot.get_center() - d.relative_position))
+            if symbols:
+                symbols.relative_position = self.reference_dot.get_center() - symbols.get_center()
+                symbols.add_updater(lambda d: d.move_to(self.reference_dot.get_center() - d.relative_position))
             phases[phase].append(change)
         for phase in phases:
             phases[phase] = AnimationGroup(*phases[phase])
@@ -318,3 +357,6 @@ class ProgramCode(VMobject):
         for phase in sorted(phases.keys(), key=lambda p: p.value):
             changes.append(phases[phase])
         return AnimationGroup(*changes, lag_ratio=1)
+
+    def symbols(self):
+        return VGroup(*self.code.symbols())

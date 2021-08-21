@@ -1,4 +1,5 @@
 from manim import *
+from manimcoder.programcode import *
 from pygments import highlight
 from pygments.formatters.html import HtmlFormatter
 from pygments.lexers import get_lexer_by_name, guess_lexer_for_filename
@@ -31,6 +32,7 @@ PANEL_OUTPUT = 4
 
 class CodeDisplayWindow(VGroup):
     title_text = 'NoTitle'
+    content_class = Text
     def __init__(self, title_text=None):
         super().__init__()
         if title_text: self.title_text = title_text
@@ -38,13 +40,23 @@ class CodeDisplayWindow(VGroup):
         self.title_bar = Rectangle(width=CANVAS_SIZE[0] - PANEL_PADDING, height=0.4).flip()
         self.title_bar.set_stroke(width=0)
         self.title_bar.set_fill(opacity=0.1)
-        self.title_bar.align_to(self.rectangle, UP).align_to(self.rectangle, LEFT)
-        self.title_bar.add_updater(lambda d: d.align_to(self.rectangle, UP).align_to(self.rectangle, LEFT))
+        self.title_bar.align_to(self.rectangle, UP+LEFT)
+        self.title_bar.add_updater(lambda d: d.align_to(self.rectangle, UP+LEFT))
         self.title = Text(self.title_text).scale(0.5)
         self.title.move_to(self.title_bar.get_center())
         self.title.add_updater(lambda d: d.move_to(self.title_bar.get_center()))
+        self.content = self.generate_content()
         self.add(self.title_bar)
         self.add(self.rectangle)
+
+    def generate_content(self, *args, **kwargs):
+        if self.content_class == Text and len(args)==0:
+            content = self.content_class('TEST', *args, **kwargs).scale(0.5)
+        else:
+            content = self.content_class(*args, **kwargs)
+        content.next_to(self.title_bar, DOWN).align_to(self.title_bar, LEFT).shift((UP+RIGHT)*0.1)
+        content.add_updater(lambda d: d.next_to(self.title_bar, DOWN).align_to(self.title_bar, LEFT).shift((UP+RIGHT)*0.1))
+        return content
 
     def set_height(self, height):
         self.rectangle.stretch_to_fit_height(height, about_edge=UP)
@@ -56,13 +68,19 @@ class CodeDisplayWindow(VGroup):
     @override_animation(Create)
     def _create_override(self, **anim_args):
         self.add(self.title)
+        self.add(self.content)
         anim = AnimationGroup(
             AnimationGroup(
                 AnimationGroup(
                     Create(self.rectangle, **anim_args),
                     Create(self.title_bar, **anim_args),
-                    lag_ratio=0),
-                Create(self.title, run_time=0.7, **anim_args),
+                    lag_ratio=0
+                ),
+                AnimationGroup(
+                    Create(self.title, run_time=0.7, **anim_args),
+                    Create(self.content, **anim_args),
+                    lag_ratio=0
+                ),
                 lag_ratio = 0.5
             ),
             Animation(self, suspend_mobject_updating=False, **anim_args),
@@ -72,7 +90,11 @@ class CodeDisplayWindow(VGroup):
     @override_animation(Uncreate)
     def _uncreate_override(self, **anim_args):
         anim = AnimationGroup(
-            Uncreate(self.title, run_time=0.7, **anim_args),
+            AnimationGroup(
+                Uncreate(self.title, run_time=0.7, **anim_args),
+                Uncreate(self.content, **anim_args),
+                lag_ratio=0
+            ),
             AnimationGroup(
                 Uncreate(self.rectangle, **anim_args),
                 Uncreate(self.title_bar, **anim_args),
@@ -81,18 +103,77 @@ class CodeDisplayWindow(VGroup):
         )
         return anim
 
+class ProgramCodeCodeDisplayWindow(CodeDisplayWindow):
+    content_class = ProgramCode
+    lexer = 'python'
+    @override_animation(Create)
+    def _create_override(self, **anim_args):
+        self.add(self.title)
+        self.add(self.content)
+        anim = AnimationGroup(
+            AnimationGroup(
+                AnimationGroup(
+                    Create(self.rectangle, **anim_args),
+                    Create(self.title_bar, **anim_args),
+                    lag_ratio=0
+                ),
+                AnimationGroup(
+                    Create(self.title, run_time=0.7, **anim_args),
+                    Create(self.content, **anim_args),
+                    self.content.changes(),
+                    lag_ratio=0
+                ),
+                lag_ratio = 0.5
+            ),
+            Animation(self, suspend_mobject_updating=False, **anim_args),
+        )
+        return anim
 
-class CodePanel(CodeDisplayWindow):
+    @override_animation(Uncreate)
+    def _uncreate_override(self, **anim_args):
+        anim = AnimationGroup(
+            AnimationGroup(
+                Uncreate(self.title, run_time=0.7, **anim_args),
+                Uncreate(self.content.all_text, **anim_args), # TODO: Hack
+                Uncreate(self.content, **anim_args),
+                lag_ratio=0
+            ),
+            AnimationGroup(
+                Uncreate(self.rectangle, **anim_args),
+                Uncreate(self.title_bar, **anim_args),
+                lag_ratio=0),
+            lag_ratio = 0.5
+        )
+        return anim
+
+    def generate_content(self):
+        content = self.content_class('', lexer=self.lexer)
+        content.align_to(self.title_bar, DOWN+LEFT).shift((DOWN+RIGHT)*0.1)
+        content.add_updater(lambda d: d.align_to(self.title_bar, DOWN+LEFT).shift((DOWN+RIGHT)*0.1))
+        return content
+
+
+class CodePanel(ProgramCodeCodeDisplayWindow):
     title_text = 'program.py'
+    def generate_content(self):
+        content = self.content_class('', lexer=self.lexer)
+        content.align_to(self.title_bar, DOWN+LEFT).shift(DOWN*0.1+RIGHT*0.5)
+        content.add_updater(lambda d: d.align_to(self.title_bar, DOWN+LEFT).shift(DOWN*0.1+RIGHT*0.5))
+        return content
 
-class VarsPanel(CodeDisplayWindow):
+
+class VarsPanel(ProgramCodeCodeDisplayWindow):
     title_text = 'Variables'
 
-class OutputPanel(CodeDisplayWindow):
-    title_text = 'Output'
 
-class TracePanel(CodeDisplayWindow):
+class OutputPanel(ProgramCodeCodeDisplayWindow):
+    title_text = 'Output'
+    lexer = 'text'
+
+
+class TracePanel(ProgramCodeCodeDisplayWindow):
     title_text = 'Stack'
+    lexer = 'text'
 
 
 class CodeDisplayWindowColumn(VGroup):
@@ -159,7 +240,7 @@ class CodeDisplayWindowColumn(VGroup):
 
 
 class MainCodeDisplayWindowColumn(CodeDisplayWindowColumn):
-    bottom_panel_height = 1
+    bottom_panel_height = 3
     top_panel_class = CodePanel
     bottom_panel_class = OutputPanel
 
