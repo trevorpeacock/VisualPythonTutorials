@@ -119,9 +119,11 @@ class ProgramCodeLine:
     def insert(self, insert_pos, new_text):
         new_parts = []
         pos = 0
+        if insert_pos == 0:
+            new_parts.append(ProgramCodeLinePart(new_text, LinePartCreationActions.INSERT))
         for part in self.parts:
             code = part.get_new_code()
-            if pos < insert_pos < pos + len(code):
+            if pos < insert_pos <= pos + len(code):
                 parts = part.split(insert_pos - pos)
                 parts = [parts[0], ProgramCodeLinePart(new_text, LinePartCreationActions.INSERT), parts[1]]
                 new_parts += [p for p in parts if p.new]
