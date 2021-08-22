@@ -178,142 +178,128 @@ class MovingFrameBox(Scene):
                 self.play(code1.changes())
             self.wait(1)
 
+        if False:
+            program = CodeDisplay()
+            program.set_panels(PANEL_CODE+PANEL_VARS)
+            program.vars.var_length = 1
+            self.play(Create(program), lag_time=0)
+            self.play(ApplyMethod(program.set_panels, PANEL_CODE))
+            self.play(ApplyMethod(program.set_panels, PANEL_CODE+PANEL_VARS))
+            program.vars.set_var('i', '3')
+            self.play(program.vars.content.changes())
+            program.vars.set_var('b', '4')
+            self.play(program.vars.content.changes())
+            program.vars.set_var('i', '4')
+            self.play(program.vars.content.changes())
+            program.vars.set_var('c', '0')
+            self.play(program.vars.content.changes())
+            program.vars.set_var('d', '0')
+            self.play(program.vars.content.changes())
+            program.vars.remove_var('b')
+            self.play(program.vars.content.changes())
+            program.vars.remove_var('i')
+            self.play(program.vars.content.changes())
+            program.vars.remove_var('d')
+            self.play(program.vars.content.changes())
+            program.vars.remove_var('c')
+            self.play(program.vars.content.changes())
+            self.wait(4)
+
         if True:
             program = CodeDisplay()
             self.program = program
+            program.vars.var_length = 1
             program.set_panels(PANEL_CODE)
-            program.panel_main.panel_top.content.replace_code("for i in range(4):\n  print(i)")
+            program.code.content.replace_code("for i in range(4):\n  print(i)")
 
             self.play(Create(program), lag_time=0)
 
             self.update_runarrow(0)
             self.play(self.runarrow())
 
-            self.update_highlight(program.panel_main.panel_top.content.code.lines[0].symbols_by_search('range(4)'))
+            self.update_highlight(program.code.content.code.lines[0].symbols_by_search('range(4)'))
             self.play(self.highlight())
 
             self.update_highlight(None)
-            program.panel_main.panel_top.content.replace(0, 'range(4)', '[0, 1, 2, 3]')
-            self.play(self.highlight(), program.panel_main.panel_top.content.changes(), lag_ratio=0) # not happening simulteneously?
+            program.code.content.replace(0, 'range(4)', '[0, 1, 2, 3]')
+            self.play(self.highlight(), program.code.content.changes(), lag_ratio=0) # not happening simulteneously?
 
-            self.update_highlight(program.panel_main.panel_top.content.code.lines[0].symbols_by_search('[0, 1, 2, 3]'))
+            self.update_highlight(program.code.content.code.lines[0].symbols_by_search('[0, 1, 2, 3]'))
             self.play(self.highlight())
 
-            self.update_highlight(program.panel_main.panel_top.content.code.lines[0].symbols_by_search('i'))
+            self.update_highlight(program.code.content.code.lines[0].symbols_by_search('i'))
             self.play(self.highlight())
             self.update_highlight(None)
             self.play(self.highlight())
 
-            self.update_highlight(program.panel_main.panel_top.content.code.lines[0].symbols_range(10, 11))
+            self.update_highlight(program.code.content.code.lines[0].symbols_range(10, 11))
             self.play(self.highlight())
 
-            self.update_highlight(program.panel_main.panel_top.content.code.lines[0].symbols_by_search('i'))
-            program.panel_main.panel_top.content.replace(0, 'i', '0')
-            self.play(program.panel_main.panel_top.content.changes(), self.highlight())
-            program.panel_main.panel_top.content.replace(0, '0', 'i')
+            self.update_highlight(program.code.content.code.lines[0].symbols_by_search('i'))
+            program.code.content.replace(0, 'i', '0')
+            self.play(program.code.content.changes(), self.highlight())
+            program.code.content.replace(0, '0', 'i')
 
             self.play(ApplyMethod(program.set_panels, PANEL_CODE+PANEL_VARS))
 
-            program.panel_side.panel_top.content.replace_code("i = 0 ")
-            self.play(program.panel_main.panel_top.content.changes(), program.panel_side.panel_top.content.changes())
+            self.play(ApplyMethod(program.vars.set_var, 'i', '0'))
 
-            self.update_highlight(program.panel_side.panel_top.content.code.lines[0].symbols)
-            self.play(self.highlight())
+            program.vars.set_var('i', '0')
+            vc = program.vars.content.changes()
+            self.update_highlight(program.vars.symbols_line('i'))
+            self.play(program.code.content.changes(), vc, self.highlight())
 
-            self.update_highlight(program.panel_side.panel_top.content.code.lines[0].symbols_by_search('0'))
+            self.update_highlight(program.vars.symbols_value('i'))
             self.play(self.highlight())
 
             self.update_runarrow(1)
             self.play(self.runarrow())
 
-            self.update_highlight(program.panel_main.panel_top.content.code.lines[1].symbols_range(8, 9))
-            self.play(self.highlight())
+            self.update_highlight(program.code.content.code.lines[1].symbols_range(8, 9))
+            program.code.content.replace(1, '(i', '(0')
+            self.play(program.code.content.changes(), self.highlight())
 
-            program.panel_main.panel_top.content.replace(1, '(i', '(0')
-            self.play(program.panel_main.panel_top.content.changes())
+            program.code.content.replace(1, '(0', '(i')
+            self.play(program.code.content.changes())
 
-            program.panel_main.panel_top.content.replace(1, '(0', '(i')
-            self.play(program.panel_main.panel_top.content.changes())
-
-            self.update_highlight(program.panel_main.panel_top.content.code.lines[1].symbols)
+            self.update_highlight(program.code.content.code.lines[1].symbols)
             self.play(self.highlight())
 
             self.play(ApplyMethod(program.set_panels, PANEL_CODE+PANEL_VARS+PANEL_OUTPUT))
 
-            self.update_highlight(program.panel_main.panel_top.content.code.lines[1].symbols)
+            self.update_highlight(program.code.content.code.lines[1].symbols)
             self.play(self.highlight())
 
-            program.panel_main.panel_bottom.content.insert(0, 0, '0')
-            self.play(program.panel_main.panel_bottom.content.changes())
-
-            self.update_highlight(program.panel_main.panel_bottom.content.code.lines[0].symbols)
-            self.play(self.highlight())
+            program.output.add_line('0')
+            oc = program.output.content.changes()
+            self.update_highlight(program.output.content.code.lines[-1].symbols)
+            self.play(oc, self.highlight())
 
             self.update_runarrow(0)
             self.update_highlight(None)
             self.play(self.highlight(), self.runarrow())
 
-            self.update_highlight(program.panel_main.panel_top.content.code.lines[0].symbols_by_search('[0, 1, 2, 3]'))
+            self.update_highlight(program.code.content.code.lines[0].symbols_by_search('[0, 1, 2, 3]'))
             self.play(self.highlight())
 
-            self.update_highlight(program.panel_main.panel_top.content.code.lines[0].symbols_by_search('1'))
+            self.update_highlight(program.code.content.code.lines[0].symbols_by_search('1'))
             self.play(self.highlight())
 
-            self.update_highlight(program.panel_side.panel_top.content.code.lines[0].symbols_by_search('0'))
+            self.update_highlight(program.vars.symbols_value('i'))
+            program.vars.set_var('i', '1')
+            self.play(program.vars.content.changes(), self.highlight())
+
+            self.update_highlight(program.code.content.code.lines[0].symbols_by_search('i'))
             self.play(self.highlight())
 
-            program.panel_side.panel_top.content.replace(0, "0", "1")
-            self.play(program.panel_side.panel_top.content.changes())
-
-            self.update_highlight(program.panel_main.panel_top.content.code.lines[0].symbols_by_search('i'))
-            self.play(self.highlight())
-
-            self.update_highlight(program.panel_main.panel_top.content.code.lines[1].symbols_range(8, 9))
+            self.update_highlight(program.code.content.code.lines[1].symbols_range(8, 9))
             self.update_runarrow(1)
             self.play(self.highlight(), self.runarrow())
 
-            program.panel_main.panel_bottom.content.append_line('1')
-            self.play(program.panel_main.panel_bottom.content.changes())
-
-            self.update_highlight(program.panel_main.panel_bottom.content.code.lines[1].symbols)
-            self.play(self.highlight())
-
-            self.update_highlight(None)
-            self.play(self.highlight())
-
-            self.update_runarrow(0)
-            self.play(self.runarrow())
-
-            program.panel_main.panel_top.content.replace(0, '[0, 1, 2, 3]', 'range(4)')
-            self.play(program.panel_main.panel_top.content.changes())
-
-
-
-
-
-            self.update_highlight(program.panel_main.panel_top.content.code.lines[0].symbols_by_search('range(4)'))
-            self.play(self.highlight())
-
-            self.update_highlight(program.panel_side.panel_top.content.code.lines[0].symbols_by_search('1'))
-            self.play(self.highlight())
-
-            program.panel_side.panel_top.content.replace(0, "1", "2")
-            self.play(program.panel_side.panel_top.content.changes())
-
-            self.update_highlight(None)
-            self.play(self.highlight())
-
-            self.update_runarrow(1)
-            self.play(self.runarrow())
-
-            self.update_highlight(program.panel_main.panel_top.content.code.lines[1].symbols_range(8, 9))
-            self.play(self.highlight())
-
-            program.panel_main.panel_bottom.content.append_line('2')
-            self.play(program.panel_main.panel_bottom.content.changes())
-
-            self.update_highlight(program.panel_main.panel_bottom.content.code.lines[2].symbols)
-            self.play(self.highlight())
+            program.output.add_line('1')
+            oc = program.output.content.changes()
+            self.update_highlight(program.output.content.code.lines[-1].symbols)
+            self.play(oc, self.highlight())
 
             self.update_highlight(None)
             self.play(self.highlight())
@@ -321,14 +307,49 @@ class MovingFrameBox(Scene):
             self.update_runarrow(0)
             self.play(self.runarrow())
 
-            program.panel_side.panel_top.content.replace(0, "2", "3")
-            self.play(program.panel_side.panel_top.content.changes())
+            program.code.content.replace(0, '[0, 1, 2, 3]', 'range(4)')
+            self.play(program.code.content.changes())
+
+
+
+
+
+            self.update_highlight(program.code.content.code.lines[0].symbols_by_search('range(4)'))
+            self.play(self.highlight())
+
+            self.update_highlight(program.vars.symbols_value('i'))
+            program.vars.set_var('i', '2')
+            self.play(self.highlight(), program.vars.content.changes())
+
+            self.update_highlight(None)
+            self.play(self.highlight())
 
             self.update_runarrow(1)
             self.play(self.runarrow())
 
-            program.panel_main.panel_bottom.content.append_line('3')
-            self.play(program.panel_main.panel_bottom.content.changes())
+            self.update_highlight(program.code.content.code.lines[1].symbols_range(8, 9))
+            self.play(self.highlight())
+
+            program.output.add_line('2')
+            oc = program.output.content.changes()
+            self.update_highlight(program.output.content.code.lines[-1].symbols)
+            self.play(oc, self.highlight())
+
+            self.update_highlight(None)
+            self.play(self.highlight())
+
+            self.update_runarrow(0)
+            self.play(self.runarrow())
+
+            program.vars.set_var('i', '3')
+            self.play(program.vars.content.changes(),
+                      Flash(program.vars.symbols_value('i'), flash_radius=0.6))
+
+            self.update_runarrow(1)
+            self.play(self.runarrow())
+
+            program.output.add_line('3')
+            self.play(program.output.content.changes())
 
             self.update_runarrow(None)
             self.play(self.runarrow())
@@ -357,7 +378,7 @@ class MovingFrameBox(Scene):
         if obj is None:
             self.newrunarrow = None
         else:
-            start = UP * self.program.panel_main.panel_top.content.code.lines[obj].symbols.get_center()[1]
+            start = UP * self.program.code.content.code.lines[obj].symbols.get_center()[1]
             start += RIGHT * self.program.panel_main.panel_top.rectangle.get_center()[0] + LEFT * self.program.panel_main.panel_top.rectangle.width / 2
             end = start + RIGHT*0.5
             self.newrunarrow = Arrow(

@@ -215,25 +215,11 @@ class ProgramCodeLines:
             yield line.symbols
 
 
-class ProgramCode(VMobject):
-    def __init__(self, code, lexer='text', highlight_style='zenburn'):
-        super().__init__()
-        self.code = ProgramCodeLines(code)
-        self.lexer = get_lexer_by_name('text') if lexer is None else lexer
-        if isinstance(self.lexer, str):
-            self.lexer = get_lexer_by_name(self.lexer)
-        self.highlight_style = highlight_style
-        self.reference_dot = Dot(radius=0)
-        self.add(self.reference_dot)
-        self.all_text = None
-
-    def _gen_coloured_text_symbols(self):
-        code = self.code.get_new_code()
-        all_text = Text(code, font="FreeMono").scale(0.8)
-        self.all_text = all_text
-        if len(all_text):
-            all_text.align_to(self.reference_dot, UP + LEFT)
-        # print(HtmlFormatter().get_style_defs('.zenburn'))
+class HighlightedCode(Text):
+    def __init__(self, code, *args, **kwargs):
+        self.lexer = kwargs.pop('lexer', 'text')
+        self.highlight_style = kwargs.pop('style', 'vim')
+        super().__init__(code, *args, **kwargs)
         html = highlight(code, self.lexer, HtmlFormatter(style=self.highlight_style))
         soup = bs4.BeautifulSoup(html, features="html.parser")
         pos = 0
@@ -243,7 +229,7 @@ class ProgramCode(VMobject):
             elif isinstance(e, bs4.element.NavigableString):
                 text = e
             strip_text = text.replace(' ', '').replace('\n', '').replace('\t', '')
-            group = all_text[pos:pos + len(strip_text)]
+            group = self[pos:pos + len(strip_text)]
             # c = random_bright_color()
             if isinstance(e, bs4.element.Tag):
                 cls = e.get('class')
@@ -325,6 +311,26 @@ class ProgramCode(VMobject):
                     group.set_weight(w)
                     group.set_slant(s)
             pos += len(strip_text)
+
+class ProgramCode(VMobject):
+    def __init__(self, code, lexer='text', highlight_style='zenburn'):
+        super().__init__()
+        self.code = ProgramCodeLines(code)
+        self.lexer = get_lexer_by_name('text') if lexer is None else lexer
+        if isinstance(self.lexer, str):
+            self.lexer = get_lexer_by_name(self.lexer)
+        self.highlight_style = highlight_style
+        self.reference_dot = Dot(radius=0)
+        self.add(self.reference_dot)
+        self.all_text = None
+
+    def _gen_coloured_text_symbols(self):
+        code = self.code.get_new_code()
+        all_text = HighlightedCode(code, font="FreeMono", lexer=self.lexer, style=self.highlight_style).scale(0.8)
+        self.all_text = all_text
+        if len(all_text):
+            all_text.align_to(self.reference_dot, UP + LEFT)
+        # print(HtmlFormatter().get_style_defs('.zenburn'))
         return all_text
 
     def insert_line(self, before_line, text):
@@ -359,7 +365,7 @@ class ProgramCode(VMobject):
         changes = []
         for phase in sorted(phases.keys(), key=lambda p: p.value):
             changes.append(phases[phase])
-        return AnimationGroup(*changes, lag_ratio=1)
+        return AnimationGroup(*changes, lag_ratio=0) #TODO: set time of irrelevant changes to 0, so lag time can be set to 1 without causing pauses
 
     def symbols(self):
         return VGroup(*self.code.symbols())

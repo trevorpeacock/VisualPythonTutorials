@@ -65,10 +65,17 @@ class CodeDisplayWindow(VGroup):
         self.rectangle.stretch_to_fit_width(*args, **kwargs)
         self.title_bar.stretch_to_fit_width(*args, **kwargs)
 
+    def content_create_animation(self, **anim_args):
+        return [Create(self.content, **anim_args)]
+
+    def content_uncreate_animation(self, **anim_args):
+        return [Uncreate(self.content, **anim_args)]
+
     @override_animation(Create)
     def _create_override(self, **anim_args):
         self.add(self.title)
-        self.add(self.content)
+        if self.content:
+            self.add(self.content)
         anim = AnimationGroup(
             AnimationGroup(
                 AnimationGroup(
@@ -78,10 +85,10 @@ class CodeDisplayWindow(VGroup):
                 ),
                 AnimationGroup(
                     Create(self.title, run_time=0.7, **anim_args),
-                    Create(self.content, **anim_args),
+                    *self.content_create_animation(**anim_args),
                     lag_ratio=0
                 ),
-                lag_ratio = 0.5
+                lag_ratio = 0.7
             ),
             Animation(self, suspend_mobject_updating=False, **anim_args),
         )
@@ -92,7 +99,7 @@ class CodeDisplayWindow(VGroup):
         anim = AnimationGroup(
             AnimationGroup(
                 Uncreate(self.title, run_time=0.7, **anim_args),
-                Uncreate(self.content, **anim_args),
+                *self.content_uncreate_animation(**anim_args),
                 lag_ratio=0
             ),
             AnimationGroup(
@@ -106,45 +113,18 @@ class CodeDisplayWindow(VGroup):
 class ProgramCodeCodeDisplayWindow(CodeDisplayWindow):
     content_class = ProgramCode
     lexer = 'python'
-    @override_animation(Create)
-    def _create_override(self, **anim_args):
-        self.add(self.title)
-        self.add(self.content)
-        anim = AnimationGroup(
-            AnimationGroup(
-                AnimationGroup(
-                    Create(self.rectangle, **anim_args),
-                    Create(self.title_bar, **anim_args),
-                    lag_ratio=0
-                ),
-                AnimationGroup(
-                    Create(self.title, run_time=0.7, **anim_args),
-                    Create(self.content, **anim_args),
-                    self.content.changes(),
-                    lag_ratio=0
-                ),
-                lag_ratio = 0.5
-            ),
-            Animation(self, suspend_mobject_updating=False, **anim_args),
-        )
-        return anim
 
-    @override_animation(Uncreate)
-    def _uncreate_override(self, **anim_args):
-        anim = AnimationGroup(
-            AnimationGroup(
-                Uncreate(self.title, run_time=0.7, **anim_args),
-                Uncreate(self.content.all_text, **anim_args), # TODO: Hack
-                Uncreate(self.content, **anim_args),
-                lag_ratio=0
-            ),
-            AnimationGroup(
-                Uncreate(self.rectangle, **anim_args),
-                Uncreate(self.title_bar, **anim_args),
-                lag_ratio=0),
-            lag_ratio = 0.5
-        )
-        return anim
+    def content_create_animation(self, **anim_args):
+        return [
+            Create(self.content, **anim_args),
+            self.content.changes()
+        ]
+
+    def content_uncreate_animation(self, **anim_args):
+        return [
+            Uncreate(self.content.all_text, **anim_args),  # TODO: Hack
+            Uncreate(self.content, **anim_args),
+       ]
 
     def generate_content(self):
         content = self.content_class('', lexer=self.lexer)
@@ -164,14 +144,68 @@ class CodePanel(ProgramCodeCodeDisplayWindow):
 
 class VarsPanel(ProgramCodeCodeDisplayWindow):
     title_text = 'Variables'
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.scopes = {'': {}}
+        self.current_scope = ''
+        self.var_length = 5
 
+    def get_lines(self):
+        lines = {}
+        scope = ''
+        for lineno, line in enumerate(self.content.code.get_new_code().split('\n')):
+            if line == '': continue
+            if '=' in line:
+                line = line.split('=')[0].strip()
+                lines[(scope, line)] = lineno
+            else:
+                scope = line
+                lines[(scope, '')] = lineno
+        return lines
+
+    def set_var(self, varname, value, scope=None):
+        if len(varname) > self.var_length:
+            raise Exception(f"Var {varname} longer than var_length={self.var_length}.")
+        if scope is None:
+            scope = self.current_scope
+        if varname not in self.scopes[scope]:
+            self.scopes[scope][varname] = value
+            line = varname + ' ' * (self.var_length - len(varname))
+            self.content.append_line(f"{line} = {value}")
+        else:
+            self.content.replace(self.get_lines()[(scope, varname)], self.scopes[scope][varname], value)
+            self.scopes[scope][varname] = value
+
+    def remove_var(self, varname, scope=None):
+        if scope is None:
+            scope = self.current_scope
+        self.content.remove_line(self.get_lines()[(scope, varname)])
+        del self.scopes[scope][varname]
+
+    def symbols_line(self, varname, scope=None):
+        if scope is None:
+            scope = self.current_scope
+        return self.content.code.lines[self.get_lines()[(scope, varname)]].symbols
+
+    def symbols_value(self, varname, scope=None):
+        if scope is None:
+            scope = self.current_scope
+        return self.content.code.lines[self.get_lines()[(scope, varname)]].symbols[len(varname)+1:]
 
 class OutputPanel(ProgramCodeCodeDisplayWindow):
     title_text = 'Output'
     lexer = 'text'
+    max_lines = 4
+    def add_line(self, text):
+        self.content.append_line(text)
+        while len(self.content.code.get_new_code().split('\n')) > self.max_lines:
+            for line in self.content.code.lines:
+                if not line.delete:
+                    line.delete = True
+                    break
 
 
-class TracePanel(ProgramCodeCodeDisplayWindow):
+class TracePanel(CodeDisplayWindow):
     title_text = 'Stack'
     lexer = 'text'
 
@@ -240,7 +274,7 @@ class CodeDisplayWindowColumn(VGroup):
 
 
 class MainCodeDisplayWindowColumn(CodeDisplayWindowColumn):
-    bottom_panel_height = 3
+    bottom_panel_height = 2.5
     top_panel_class = CodePanel
     bottom_panel_class = OutputPanel
 
@@ -316,3 +350,9 @@ class CodeDisplay(BaseCodeDisplay):
     left_column_class = MainCodeDisplayWindowColumn
     right_column_class = SideCodeDisplayWindowColumn
     side_panel_width = 5
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.code = self.panel_main.panel_top
+        self.output = self.panel_main.panel_bottom
+        self.vars = self.panel_side.panel_top
+        self.stack = self.panel_side.panel_bottom
