@@ -153,15 +153,13 @@ class MovingFrameBox(Scene):
             self.play(Create(rectangle1), Create(code1), code1.changes())
 
             for _ in range(2):
-                self.wait(1)
                 code1.insert_line(1, '  print("asdf")')
                 self.play(code1.changes())
-                self.wait(1)
                 code1.replace(0, 'range(4)', '[0, 1, 2, 3]')
                 self.play(code1.changes())
                 code1.replace(0, ']:', 'x')
                 self.play(code1.changes())
-                code1.replace(0, 'loop', 'looping') #TODO: Replacement at end doesn't work
+                code1.replace(0, 'loop', 'looping')
                 self.play(code1.changes())
                 code1.replace(0, 'looping', 'loop')
                 self.play(code1.changes())
@@ -178,6 +176,7 @@ class MovingFrameBox(Scene):
                 self.play(code1.changes())
                 code1.remove_line(1)
                 self.play(code1.changes())
+            self.wait(1)
 
         if True:
             program = CodeDisplay()

@@ -108,7 +108,10 @@ class ProgramCodeLine:
                 new_parts.append(part)
                 continue
             parts = part.split(lengths[0])
-            parts = [parts[0]] + list(parts[1].split(-lengths[1]))
+            if lengths[1]==0:
+                parts = list(parts)
+            else:
+                parts = [parts[0]] + list(parts[1].split(-lengths[1]))
             parts[1].new = new_text
             new_parts += [p for p in parts if p.current]
         self.parts = new_parts
