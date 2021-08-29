@@ -180,6 +180,8 @@ class VarsPanel(ProgramCodeCodeDisplayWindow):
         self.scopes = {'': {}}
         self.current_scope = ''
         self.var_length = 5
+        self.scope_bars = {}
+        self.changes_queue = []
 
     def get_lines(self):
         lines = {}
@@ -194,6 +196,23 @@ class VarsPanel(ProgramCodeCodeDisplayWindow):
                 lines[(scope, '')] = lineno
         return lines
 
+    def get_next_scope_line(self, scope):
+        found_scope = scope == ''
+        for (s, v), lineno in self.get_lines().items():
+            print(found_scope, s, v, lineno)
+            if s==scope and v=='':
+                found_scope = True
+            if found_scope and v=='':
+                return lineno
+        return lineno
+
+    def last_scope_name(self):
+        scope = ''
+        for (s, v), lineno in self.get_lines().items():
+            if v=='':
+                scope = s
+        return scope
+
     def set_var(self, varname, value, scope=None):
         if len(varname) > self.var_length:
             raise Exception(f"Var {varname} longer than var_length={self.var_length}.")
@@ -202,7 +221,11 @@ class VarsPanel(ProgramCodeCodeDisplayWindow):
         if varname not in self.scopes[scope]:
             self.scopes[scope][varname] = value
             line = varname + ' ' * (self.var_length - len(varname))
-            self.content.append_line(f"{line} = {value}")
+            line = f"{line} = {value}"
+            if scope == self.current_scope:
+                self.content.append_line(line)
+            else:
+                self.content.insert_line(self.get_next_scope_line(scope), line)
         else:
             self.content.replace(self.get_lines()[(scope, varname)], self.scopes[scope][varname], value)
             self.scopes[scope][varname] = value
@@ -213,6 +236,27 @@ class VarsPanel(ProgramCodeCodeDisplayWindow):
         self.content.remove_line(self.get_lines()[(scope, varname)])
         del self.scopes[scope][varname]
 
+    def add_scope(self, scope):
+        self.scopes[scope] = {}
+        self.content.append_line(scope)
+        self.current_scope = scope
+        bar = Rectangle(height=0.625*self.content.text_scale, width=self.rectangle.width)
+        bar.set_stroke(width=0)
+        bar.set_fill(opacity=0.2)
+        self.scope_bars[scope] = bar
+        self.add(bar)
+        self.changes_queue.append(Create(bar))
+
+    def remove_scope(self):
+        scope = self.current_scope
+        del self.scopes[scope]
+        for (s, _), lineno in self.get_lines().items():
+            if s == scope:
+                self.content.remove_line(lineno)
+        self.current_scope = self.last_scope_name()
+        self.changes_queue.append(FadeOut(self.scope_bars[scope]))
+        del self.scope_bars[scope]
+
     def symbols_line(self, varname, scope=None):
         if scope is None:
             scope = self.current_scope
@@ -222,6 +266,21 @@ class VarsPanel(ProgramCodeCodeDisplayWindow):
         if scope is None:
             scope = self.current_scope
         return self.content.code.lines[self.get_lines()[(scope, varname)]].symbols[len(varname)+1:]
+
+    def changes(self):
+        changes = self.content.changes()
+
+        if self.changes_queue:
+            for scope, bar in self.scope_bars.items():
+                bar.move_to(self.symbols_line('', scope=scope))
+                bar.align_to(self.rectangle, LEFT)
+            changes = AnimationGroup(
+                *self.changes_queue,
+                changes
+            )
+            self.changes_queue = []
+        return changes
+
 
 class OutputPanel(ProgramCodeCodeDisplayWindow):
     title_text = 'Output'
