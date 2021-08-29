@@ -315,18 +315,19 @@ class HighlightedCode(Text):
             pos += len(strip_text)
 
 class ProgramCode(VMobject):
-    def __init__(self, code, lexer='text', highlight_style='zenburn'):
+    def __init__(self, code, lexer='text', highlight_style='zenburn', text_scale=0.8):
         super().__init__()
         self.code = ProgramCodeLines(code)
         self.lexer = 'text' if lexer is None else lexer
         self.highlight_style = highlight_style
+        self.text_scale = text_scale
         self.reference_dot = Dot(radius=0)
         self.add(self.reference_dot)
         self.all_text = None
 
     def _gen_coloured_text_symbols(self):
         code = self.code.get_new_code()
-        all_text = HighlightedCode(code, font="FreeMono", lexer=self.lexer, style=self.highlight_style).scale(0.8)
+        all_text = HighlightedCode(code, font="FreeMono", lexer=self.lexer, style=self.highlight_style).scale(self.text_scale)
         self.all_text = all_text
         if len(all_text):
             all_text.align_to(self.reference_dot, UP + LEFT)
