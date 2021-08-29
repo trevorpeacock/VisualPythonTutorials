@@ -349,9 +349,12 @@ class ProgramCode(VMobject):
     def remove_line(self, line):
         self.code.remove_line(line)
 
-    def replace_code(self, new_code):
+    def remove_all_lines(self):
         for lineno, _ in enumerate(self.code.lines):
             self.remove_line(lineno)
+
+    def replace_code(self, new_code):
+        self.remove_all_lines()
         self.code.add_code(new_code)
 
     def changes(self):
