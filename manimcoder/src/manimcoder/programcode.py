@@ -268,14 +268,14 @@ class HighlightedCode(Text):
                         's': ('#BA2121', NORMAL, NORMAL),  # Literal.String
                         'na': ('#7D9029', NORMAL, NORMAL),  # Name.Attribute
                         'nb': ('#008000', NORMAL, NORMAL),  # Name.Builtin
-                        'nc': ('#0000FF', BOLD, NORMAL),  # Name.Class
+                        'nc': ('#4444FF', BOLD, NORMAL),  # Name.Class
                         'no': ('#880000', NORMAL, NORMAL),  # Name.Constant
                         'nd': ('#AA22FF', NORMAL, NORMAL),  # Name.Decorator
                         'ni': ('#999999', BOLD, NORMAL),  # Name.Entity
                         'ne': ('#D2413A', BOLD, NORMAL),  # Name.Exception
-                        'nf': ('#0000FF', NORMAL, NORMAL),  # Name.Function
+                        'nf': ('#4444FF', NORMAL, NORMAL),  # Name.Function
                         'nl': ('#A0A000', NORMAL, NORMAL),  # Name.Label
-                        'nn': ('#0000FF', BOLD, NORMAL),  # Name.Namespace
+                        'nn': ('#4444FF', BOLD, NORMAL),  # Name.Namespace
                         'nt': ('#008000', BOLD, NORMAL),  # Name.Tag
                         'nv': ('#19177C', NORMAL, NORMAL),  # Name.Variable
                         'ow': ('#AA22FF', BOLD, NORMAL),  # Operator.Word
@@ -299,7 +299,7 @@ class HighlightedCode(Text):
                         's1': ('#BA2121', NORMAL, NORMAL),  # Literal.String.Single
                         'ss': ('#19177C', NORMAL, NORMAL),  # Literal.String.Symbol
                         'bp': ('#008000', NORMAL, NORMAL),  # Name.Builtin.Pseudo
-                        'fm': ('#0000FF', NORMAL, NORMAL),  # Name.Function.Magic
+                        'fm': ('#4444FF', NORMAL, NORMAL),  # Name.Function.Magic
                         'vc': ('#19177C', NORMAL, NORMAL),  # Name.Variable.Class
                         'vg': ('#19177C', NORMAL, NORMAL),  # Name.Variable.Global
                         'vi': ('#19177C', NORMAL, NORMAL),  # Name.Variable.Instance
