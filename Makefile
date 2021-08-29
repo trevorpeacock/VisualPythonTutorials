@@ -15,10 +15,16 @@ clean:
 	rm -dfr $(VENVPATH)
 	rm -dfr media
 
+flow: setup
+	bash -c "source $(VENVPATH)/bin/activate && manim -a -ql -p videos/flow.py"
+
+function_intro: setup
+	bash -c "source $(VENVPATH)/bin/activate && manim -a -qh videos/function_intro.py"
+
 .PHONY: run
-run: setup
-	bash -c "source $(VENVPATH)/bin/activate && manim -a -qm -p videos/flow.py"
+run: function_intro
 
 .PHONY: test
 test: setup
-	bash -c "source $(VENVPATH)/bin/activate && manim -qm -p testing/tst2.py MovingFrameBox2"
+	bash -c "source $(VENVPATH)/bin/activate && manim -a -ql -p testing/test.py"
+#	bash -c "source $(VENVPATH)/bin/activate && manim -ql -p videos/function_intro.py BestPractices"
