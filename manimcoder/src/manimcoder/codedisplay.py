@@ -113,6 +113,10 @@ class CodeDisplayWindow(VGroup):
 class ProgramCodeCodeDisplayWindow(CodeDisplayWindow):
     content_class = ProgramCode
     lexer = 'python'
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.oldrunarrorw = None
+        self.newrunarrow = None
 
     def content_create_animation(self, **anim_args):
         return [
@@ -121,6 +125,7 @@ class ProgramCodeCodeDisplayWindow(CodeDisplayWindow):
         ]
 
     def content_uncreate_animation(self, **anim_args):
+        # TODO: include arrow
         return [
             Uncreate(self.content.all_text, **anim_args),  # TODO: Hack
             Uncreate(self.content, **anim_args),
@@ -131,6 +136,32 @@ class ProgramCodeCodeDisplayWindow(CodeDisplayWindow):
         content.align_to(self.title_bar, DOWN+LEFT).shift((DOWN+RIGHT)*0.1)
         content.add_updater(lambda d: d.align_to(self.title_bar, DOWN+LEFT).shift((DOWN+RIGHT)*0.1))
         return content
+
+    def update_runarrow(self, obj):
+        self.oldrunarrow = self.newrunarrow
+        if obj is None:
+            self.newrunarrow = None
+        else:
+            start = UP * self.content.code.lines[obj].symbols.get_center()[1]
+            start += RIGHT * self.rectangle.get_center()[0] + LEFT * self.rectangle.width / 2
+            end = start + RIGHT*0.5
+            self.newrunarrow = Arrow(
+                start=start,
+                end=end,
+                buff=0.05,
+                stroke_width=15,
+                max_stroke_width_to_length_ratio=900,
+                max_tip_length_to_length_ratio=0.8,
+            )
+
+    def runarrow(self):
+        if self.oldrunarrow is None and self.newrunarrow is None:
+            raise Exception
+        if self.oldrunarrow is not None and self.newrunarrow is not None:
+            return ReplacementTransform(self.oldrunarrow, self.newrunarrow)
+        if self.newrunarrow:
+            return FadeIn(self.newrunarrow)
+        return FadeOut(self.oldrunarrow)
 
 
 class CodePanel(ProgramCodeCodeDisplayWindow):
