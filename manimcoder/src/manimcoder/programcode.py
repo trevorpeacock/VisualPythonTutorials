@@ -218,6 +218,8 @@ class ProgramCodeLines:
 class HighlightedCode(Text):
     def __init__(self, code, *args, **kwargs):
         self.lexer = kwargs.pop('lexer', 'text')
+        if isinstance(self.lexer, str):
+            self.lexer = get_lexer_by_name(self.lexer)
         self.highlight_style = kwargs.pop('style', 'vim')
         super().__init__(code, *args, **kwargs)
         html = highlight(code, self.lexer, HtmlFormatter(style=self.highlight_style))
@@ -316,9 +318,7 @@ class ProgramCode(VMobject):
     def __init__(self, code, lexer='text', highlight_style='zenburn'):
         super().__init__()
         self.code = ProgramCodeLines(code)
-        self.lexer = get_lexer_by_name('text') if lexer is None else lexer
-        if isinstance(self.lexer, str):
-            self.lexer = get_lexer_by_name(self.lexer)
+        self.lexer = 'text' if lexer is None else lexer
         self.highlight_style = highlight_style
         self.reference_dot = Dot(radius=0)
         self.add(self.reference_dot)
