@@ -294,6 +294,9 @@ class OutputPanel(ProgramCodeCodeDisplayWindow):
                     line.delete = True
                     break
 
+    def clear_lines(self):
+        self.content.remove_all_lines()
+
 
 class TracePanel(CodeDisplayWindow):
     title_text = 'Stack'
