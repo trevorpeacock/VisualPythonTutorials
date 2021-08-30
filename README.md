@@ -1,6 +1,6 @@
 Python Tutorials using the [manim](https://pypi.org/project/manim/) library.
 
-Currently the only video is an [early draft](https://www.youtube.com/watch?v=GWg1NRu8FSE) tutorial explaining how functions work.
+Currently the only video is an [early draft](https://www.youtube.com/watch?v=GWg1NRu8FSE) tutorial explaining how functions work. ([source](videos/function_intro.py))
 
 Todo list:
 * final proof of script
